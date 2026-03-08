@@ -218,9 +218,8 @@ export default function ClockReaderApp() {
     : null;
   const clockSec = dispH*3600 + dispM*60 + dispS;
   const diffSec  = photoSec !== null ? Math.round(clockSec - photoSec) : null;
-  const fmt2b = n => String(n).padStart(2,"0");
   const photoTimeStr = photoDate
-    ? `${photoDate.getFullYear()}/${fmt2b(photoDate.getMonth()+1)}/${fmt2b(photoDate.getDate())} ${fmt2b(photoDate.getHours())}:${fmt2b(photoDate.getMinutes())}:${fmt2b(photoDate.getSeconds())}`
+    ? `${photoDate.getFullYear()}/${fmt2(photoDate.getMonth()+1)}/${fmt2(photoDate.getDate())} ${fmt2(photoDate.getHours())}:${fmt2(photoDate.getMinutes())}:${fmt2(photoDate.getSeconds())}`
     : "";
   const csvText = buildCsv({ photoTime: photoTimeStr, diffSec });
   const diffColor = diffSec === null ? "#555"
@@ -254,7 +253,6 @@ export default function ClockReaderApp() {
     reader.readAsArrayBuffer(file);
   }, []);
 
-  const fmt2 = n => String(n).padStart(2,"0");
 
   return (
     <div style={{ minHeight:"100vh", background:"#05050d", color:"#e8e0d0",
