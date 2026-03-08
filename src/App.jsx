@@ -210,7 +210,6 @@ export default function ClockReaderApp() {
   const [mM, setMM] = useState(0);
   const [mS, setMS] = useState(0);
   const [hasResult, setHasResult]= useState(false);
-  const [csvText,   setCsvText]  = useState(null);
 
   const dispH = mH, dispM = mM, dispS = mS;
 
