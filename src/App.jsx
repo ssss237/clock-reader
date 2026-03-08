@@ -295,8 +295,7 @@ export default function ClockReaderApp() {
               {photoDate && (
                 <div style={{ marginTop:"8px", fontSize:"10px", color:"#888",
                   letterSpacing:"2px", textAlign:"center" }}>
-                  📅 {photoDate.getFullYear()}/{fmt2(photoDate.getMonth()+1)}/{fmt2(photoDate.getDate())}
-                  　{fmt2(photoDate.getHours())}:{fmt2(photoDate.getMinutes())}:{fmt2(photoDate.getSeconds())}
+                  📅 {photoDate.getFullYear()}/{fmt2(photoDate.getMonth()+1)}/{fmt2(photoDate.getDate())} {fmt2(photoDate.getHours())}:{fmt2(photoDate.getMinutes())}:{fmt2(photoDate.getSeconds())}
                 </div>
               )}
             </div>
@@ -315,7 +314,7 @@ export default function ClockReaderApp() {
               {fmt2(dispH)}:{fmt2(dispM)}:{fmt2(dispS)}
             </div>
             <div style={{ display:"flex", gap:"16px", justifyContent:"center" }}>
-              <Spinner value={mH} min={1} max={12} onChange={setMH} color="#c8a96e" label="時" />
+              <Spinner value={mH} min={0} max={23} onChange={setMH} color="#c8a96e" label="時" />
               <Spinner value={mM} min={0} max={59} onChange={setMM} color="#8ab4f8" label="分" />
               <Spinner value={mS} min={0} max={59} onChange={setMS} color="#00e5a0" label="秒" />
             </div>
