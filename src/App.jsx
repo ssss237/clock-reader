@@ -219,6 +219,11 @@ export default function ClockReaderApp() {
     : null;
   const clockSec = dispH*3600 + dispM*60 + dispS;
   const diffSec  = photoSec !== null ? Math.round(clockSec - photoSec) : null;
+  const fmt2b = n => String(n).padStart(2,"0");
+  const photoTimeStr = photoDate
+    ? `${photoDate.getFullYear()}/${fmt2b(photoDate.getMonth()+1)}/${fmt2b(photoDate.getDate())} ${fmt2b(photoDate.getHours())}:${fmt2b(photoDate.getMinutes())}:${fmt2b(photoDate.getSeconds())}`
+    : "";
+  const csvText = buildCsv({ photoTime: photoTimeStr, diffSec });
   const diffColor = diffSec === null ? "#555"
     : Math.abs(diffSec) <= 5  ? "#00e5a0"
     : Math.abs(diffSec) <= 60 ? "#f5a623"
@@ -231,7 +236,12 @@ export default function ClockReaderApp() {
     reader.onload = ev => {
       const buf = ev.target.result;
       const date = parseExifDate(buf);
-      if (date) setPhotoDate(date);
+      if (date) {
+        setPhotoDate(date);
+        setMH(date.getHours());
+        setMM(date.getMinutes());
+        setMS(date.getSeconds());
+      }
       const img = new Image();
       const url = URL.createObjectURL(file);
       img.onload = () => {
@@ -364,22 +374,16 @@ export default function ClockReaderApp() {
         {hasResult && (
           <div style={{ border:"1px solid #c8a96e30", borderRadius:"6px", overflow:"hidden" }}>
             <button
-              onClick={() => {
-                const pad = n => String(n).padStart(2,"0");
-                const photoTime = photoDate
-                  ? `${photoDate.getFullYear()}/${pad(photoDate.getMonth()+1)}/${pad(photoDate.getDate())} ${pad(photoDate.getHours())}:${pad(photoDate.getMinutes())}:${pad(photoDate.getSeconds())}`
-                  : "";
-                setCsvText(v => v === null ? buildCsv({ photoTime, diffSec }) : null);
-              }}
+              onClick={() => { setShowCsv(v => !v); }}
               style={{ width:"100%", padding:"12px", border:"none",
                 background:"rgba(200,169,110,0.07)", color:"#c8a96e",
                 fontSize:"11px", fontFamily:"'Courier New',monospace",
                 letterSpacing:"3px", cursor:"pointer",
                 display:"flex", alignItems:"center", justifyContent:"center", gap:"8px" }}>
               <span style={{ fontSize:"16px" }}>📊</span>
-              {csvText !== null ? "▲ 閉じる" : "CSVデータを表示"}
+              {showCsv ? "▲ 閉じる" : "CSVデータを表示"}
             </button>
-            {csvText !== null && (
+            {showCsv && (
               <div style={{ borderTop:"1px solid #c8a96e20", padding:"10px 12px", background:"#07070e" }}>
                 <div style={{ fontSize:"9px", color:"#555", letterSpacing:"2px", marginBottom:"6px" }}>
                   コピーして .csv に保存、またはExcelに直接貼り付け
