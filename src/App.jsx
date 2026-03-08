@@ -93,6 +93,92 @@ function Spinner({ value, min, max, onChange, color, label }) {
   );
 }
 
+
+// ── 時計文字盤をクロップ（分散ベース円検出） ──
+function cropToClockFace(dataUrl, callback) {
+  const img = new Image();
+  img.onload = () => {
+    try {
+      const W = img.naturalWidth, H = img.naturalHeight;
+      const SCAN = 300, OUT = 420;
+
+      // スキャン用キャンバス（縮小して処理）
+      const sc = document.createElement("canvas");
+      sc.width = SCAN; sc.height = SCAN;
+      const sctx = sc.getContext("2d");
+      sctx.drawImage(img, 0, 0, W, H, 0, 0, SCAN, SCAN);
+      const pixels = sctx.getImageData(0, 0, SCAN, SCAN).data;
+
+      // 各行・列の輝度分散を計算
+      const rowVar = new Float32Array(SCAN);
+      const colVar = new Float32Array(SCAN);
+      for (let y = 0; y < SCAN; y++) {
+        let sum = 0, sum2 = 0;
+        for (let x = 0; x < SCAN; x++) {
+          const i = (y * SCAN + x) * 4;
+          const v = (pixels[i] + pixels[i+1] + pixels[i+2]) / 3;
+          sum += v; sum2 += v * v;
+        }
+        const mean = sum / SCAN;
+        rowVar[y] = sum2 / SCAN - mean * mean;
+      }
+      for (let x = 0; x < SCAN; x++) {
+        let sum = 0, sum2 = 0;
+        for (let y = 0; y < SCAN; y++) {
+          const i = (y * SCAN + x) * 4;
+          const v = (pixels[i] + pixels[i+1] + pixels[i+2]) / 3;
+          sum += v; sum2 += v * v;
+        }
+        const mean = sum / SCAN;
+        colVar[x] = sum2 / SCAN - mean * mean;
+      }
+
+      // 分散が高い（エッジが多い）領域を見つける
+      const THRESH = 0.3;
+      const rowMax = Math.max(...rowVar);
+      const colMax = Math.max(...colVar);
+      let top = 0, bottom = SCAN-1, left = 0, right = SCAN-1;
+      for (let i = 0; i < SCAN; i++) {
+        if (rowVar[i] > rowMax * THRESH) { top = i; break; }
+      }
+      for (let i = SCAN-1; i >= 0; i--) {
+        if (rowVar[i] > rowMax * THRESH) { bottom = i; break; }
+      }
+      for (let i = 0; i < SCAN; i++) {
+        if (colVar[i] > colMax * THRESH) { left = i; break; }
+      }
+      for (let i = SCAN-1; i >= 0; i--) {
+        if (colVar[i] > colMax * THRESH) { right = i; break; }
+      }
+
+      // 正方形に調整してパディング追加
+      const cx = (left + right) / 2;
+      const cy = (top + bottom) / 2;
+      const radius = Math.max(right - left, bottom - top) / 2 * 1.1;
+      const sLeft   = Math.max(0, cx - radius);
+      const sTop    = Math.max(0, cy - radius);
+      const sSize   = Math.min(SCAN - sLeft, SCAN - sTop, radius * 2);
+
+      // 元画像座標に変換
+      const scaleX = W / SCAN, scaleY = H / SCAN;
+      const oLeft = sLeft * scaleX;
+      const oTop  = sTop  * scaleY;
+      const oSize = sSize * Math.max(scaleX, scaleY);
+
+      // 出力
+      const out = document.createElement("canvas");
+      out.width = OUT; out.height = OUT;
+      const octx = out.getContext("2d");
+      octx.drawImage(img, oLeft, oTop, oSize, oSize, 0, 0, OUT, OUT);
+      callback(out.toDataURL("image/jpeg", 0.92));
+    } catch(e) {
+      callback(dataUrl);
+    }
+  };
+  img.onerror = () => callback(dataUrl);
+  img.src = dataUrl;
+}
+
 export default function App() {
   const [preview,   setPreview]   = useState(null);
   const [photoDate, setPhotoDate] = useState(null);
@@ -119,7 +205,12 @@ export default function App() {
     };
     ra.readAsArrayBuffer(file);
     const rb = new FileReader();
-    rb.onload = ev => { setPreview(ev.target.result); setHasResult(true); };
+    rb.onload = ev => {
+      cropToClockFace(ev.target.result, cropped => {
+        setPreview(cropped);
+        setHasResult(true);
+      });
+    };
     rb.readAsDataURL(file);
   }, []);
 
