@@ -241,15 +241,15 @@ export default function ClockReaderApp() {
         setMM(date.getMinutes());
         setMS(date.getSeconds());
       }
-      const img = new Image();
-      const url = URL.createObjectURL(file);
-      img.onload = () => {
-        setImage(url);
-        const cropped = cropToClockFace(img);
-        setPreview(cropped);
+        // DataURLで画像を直接表示（クロップなし）
+      const r2 = new FileReader();
+      r2.onload = ev => {
+        const dataUrl = ev.target.result;
+        setImage(dataUrl);
+        setPreview(dataUrl);
         setHasResult(true);
       };
-      img.src = url;
+      r2.readAsDataURL(file);
     };
     reader.readAsArrayBuffer(file);
   }, []);
