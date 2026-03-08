@@ -410,13 +410,13 @@ export default function ClockReaderApp() {
 
       </div>
 
-      <style>{\`
+      <style>{`
         @keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
         input[type=number]::-webkit-inner-spin-button,
         input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
         input[type=file] { font-size:11px; }
-      \`}</style>
+      `}</style>
     </div>
   );
 }
