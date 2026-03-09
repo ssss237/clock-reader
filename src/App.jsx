@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
+import ExcelJS from "exceljs";
 
 // ── EXIF parser ──
 function parseExifDate(buffer) {
@@ -187,6 +188,7 @@ export default function App() {
   const [mS, setMS] = useState(0);
   const [hasResult, setHasResult] = useState(false);
   const [showCsv,   setShowCsv]   = useState(false);
+  const [records, setRecords] = useState([]);
 
   useEffect(() => {
     const s = document.createElement("style");
@@ -223,6 +225,39 @@ export default function App() {
   const diffColor = diffSec === null ? "#555" : Math.abs(diffSec) <= 5 ? "#00e5a0" : Math.abs(diffSec) <= 60 ? "#f5a623" : "#e05555";
   const CRLF = "\r\n", TAB = "\t";
   const csvText = "画像撮影時刻(EXIF)" + TAB + "時計誤差(秒)" + CRLF + photoTime + TAB + (diffSec == null ? "" : diffSec) + CRLF;
+
+  const addRecord = () => {
+    if (diffSec === null && !photoTime) return;
+    const newRec = { photoTime: photoTime || "不明", diffSec: diffSec ?? "" };
+    setRecords(prev => [...prev, newRec]);
+  };
+
+  const removeRecord = (i) => setRecords(prev => prev.filter((_, idx) => idx !== i));
+
+  const exportExcel = async () => {
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet("計測結果");
+    ws.columns = [
+      { header: "No.",             key: "no",    width: 6 },
+      { header: "画像撮影時刻(EXIF)", key: "time",  width: 26 },
+      { header: "時計誤差(秒)",       key: "diff",  width: 14 },
+    ];
+    // Header style
+    ws.getRow(1).eachCell(cell => {
+      cell.font = { bold: true };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1A1A28" } };
+      cell.font = { bold: true, color: { argb: "FFE8E0D0" } };
+    });
+    records.forEach((r, i) => {
+      ws.addRow({ no: i + 1, time: r.photoTime, diff: r.diffSec === "" ? null : r.diffSec });
+    });
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "clock-results.xlsx"; a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div style={{ minHeight:"100vh", background:"#05050d", color:"#e8e0d0", fontFamily:"'Courier New',monospace", display:"flex", flexDirection:"column" }}>
@@ -291,6 +326,58 @@ export default function App() {
           </div>
         )}
 
+        {/* 記録に追加ボタン */}
+        {hasResult && (
+          <button onClick={addRecord}
+            style={{ width:"100%", padding:"13px", border:"1px solid #00e5a040", borderRadius:"6px",
+              background:"rgba(0,229,160,0.07)", color:"#00e5a0", fontSize:"11px",
+              fontFamily:"'Courier New',monospace", letterSpacing:"3px", cursor:"pointer",
+              display:"flex", alignItems:"center", justifyContent:"center", gap:"8px" }}>
+            <span style={{ fontSize:"16px" }}>➕</span> 記録に追加
+          </button>
+        )}
+
+        {/* 記録一覧 & Excelエクスポート */}
+        {records.length > 0 && (
+          <div style={{ border:"1px solid #00e5a030", borderRadius:"8px", overflow:"hidden" }}>
+            <div style={{ padding:"8px 12px", borderBottom:"1px solid #00e5a020",
+              fontSize:"9px", letterSpacing:"4px", color:"#00e5a099",
+              display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <span>RECORDS ({records.length}件)</span>
+              <button onClick={exportExcel}
+                style={{ padding:"5px 12px", border:"1px solid #00e5a060", borderRadius:"4px",
+                  background:"rgba(0,229,160,0.12)", color:"#00e5a0", fontSize:"10px",
+                  fontFamily:"'Courier New',monospace", letterSpacing:"2px", cursor:"pointer" }}>
+                📥 Excelダウンロード
+              </button>
+            </div>
+            <div style={{ background:"#07070e" }}>
+              {/* ヘッダー */}
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 2fr 1fr auto",
+                padding:"6px 12px", borderBottom:"1px solid #0e0e1a",
+                fontSize:"9px", letterSpacing:"2px", color:"#333" }}>
+                <span>No.</span><span>撮影時刻(EXIF)</span><span>誤差(秒)</span><span></span>
+              </div>
+              {records.map((r, i) => (
+                <div key={i} style={{ display:"grid", gridTemplateColumns:"1fr 2fr 1fr auto",
+                  padding:"7px 12px", borderBottom:"1px solid #0a0a14",
+                  fontSize:"10px", fontFamily:"'Courier New',monospace",
+                  alignItems:"center" }}>
+                  <span style={{ color:"#444" }}>{i+1}</span>
+                  <span style={{ color:"#8ab4f8" }}>{r.photoTime}</span>
+                  <span style={{ color: r.diffSec === "" ? "#444" : Math.abs(r.diffSec) <= 5 ? "#00e5a0" : Math.abs(r.diffSec) <= 60 ? "#f5a623" : "#e05555" }}>
+                    {r.diffSec === "" ? "--" : (r.diffSec >= 0 ? "+" : "") + r.diffSec + "s"}
+                  </span>
+                  <button onClick={() => removeRecord(i)}
+                    style={{ background:"transparent", border:"none", color:"#333",
+                      cursor:"pointer", fontSize:"14px", padding:"0 4px" }}>✕</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* CSV表示 */}
         {hasResult && (
           <div style={{ border:"1px solid #c8a96e30", borderRadius:"6px", overflow:"hidden" }}>
             <button onClick={() => setShowCsv(v => !v)}
@@ -300,14 +387,8 @@ export default function App() {
             </button>
             {showCsv && (
               <div style={{ borderTop:"1px solid #c8a96e20", padding:"10px 12px", background:"#07070e" }}>
-                <div style={{ fontSize:"9px", color:"#555", letterSpacing:"2px", marginBottom:"6px" }}>コピーして .csv に保存、またはExcelに直接貼り付け</div>
                 <textarea readOnly value={csvText}
                   style={{ width:"100%", height:"68px", background:"#0a0a14", border:"1px solid #8ab4f860", borderRadius:"4px", color:"#8ab4f8", fontFamily:"'Courier New',monospace", fontSize:"11px", padding:"8px", resize:"none", outline:"none", boxSizing:"border-box" }} />
-                <div style={{ marginTop:"6px", padding:"7px 10px", background:"rgba(138,180,248,0.05)", border:"1px solid #8ab4f820", borderRadius:"4px", fontSize:"10px", color:"#555", lineHeight:1.8 }}>
-                  ① テキストをタップ → 全選択される<br />
-                  ② 長押し →「コピー」を選択<br />
-                  ③ Excelのセルに貼り付け → <span style={{ color:"#8ab4f8" }}>タブ区切りで別セルに入ります</span>
-                </div>
               </div>
             )}
           </div>
