@@ -1,5 +1,4 @@
 import { useState, useCallback, useEffect } from "react";
-import ExcelJS from "exceljs";
 
 // ── EXIF parser ──
 function parseExifDate(buffer) {
@@ -235,23 +234,71 @@ export default function App() {
   const removeRecord = (i) => setRecords(prev => prev.filter((_, idx) => idx !== i));
 
   const exportExcel = async () => {
-    const wb = new ExcelJS.Workbook();
-    const ws = wb.addWorksheet("計測結果");
-    ws.columns = [
-      { header: "No.",             key: "no",    width: 6 },
-      { header: "画像撮影時刻(EXIF)", key: "time",  width: 26 },
-      { header: "時計誤差(秒)",       key: "diff",  width: 14 },
-    ];
-    // Header style
-    ws.getRow(1).eachCell(cell => {
-      cell.font = { bold: true };
-      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1A1A28" } };
-      cell.font = { bold: true, color: { argb: "FFE8E0D0" } };
-    });
+    // Pure OOXML xlsx generation using JSZip
+    const { default: JSZip } = await import("https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm");
+
+    const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+    // Build shared strings
+    const strs = ["No.", "画像撮影時刻(EXIF)", "時計誤差(秒)"];
+    records.forEach(r => { if (!strs.includes(r.photoTime)) strs.push(r.photoTime); });
+    const si = s => strs.indexOf(s);
+
+    const sharedStringsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="${3+records.length*2}" uniqueCount="${strs.length}">
+${strs.map(s => `<si><t>${esc(s)}</t></si>`).join("")}
+</sst>`;
+
+    // Build rows
+    const colLetter = ["A","B","C"];
+    let rowsXml = `<row r="1"><c r="A1" t="s"><v>${si("No.")}</v></c><c r="B1" t="s"><v>${si("画像撮影時刻(EXIF)")}</v></c><c r="C1" t="s"><v>${si("時計誤差(秒)")}</v></c></row>`;
     records.forEach((r, i) => {
-      ws.addRow({ no: i + 1, time: r.photoTime, diff: r.diffSec === "" ? null : r.diffSec });
+      const row = i + 2;
+      const diffVal = r.diffSec === "" ? "" : `<c r="C${row}" t="n"><v>${r.diffSec}</v></c>`;
+      const timeIdx = si(r.photoTime);
+      rowsXml += `<row r="${row}"><c r="A${row}" t="n"><v>${i+1}</v></c><c r="B${row}" t="s"><v>${timeIdx}</v></c>${diffVal}</row>`;
     });
-    const buf = await wb.xlsx.writeBuffer();
+
+    const sheetXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<cols><col min="1" max="1" width="6"/><col min="2" max="2" width="26"/><col min="3" max="3" width="14"/></cols>
+<sheetData>${rowsXml}</sheetData>
+</worksheet>`;
+
+    const workbookXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<sheets><sheet name="計測結果" sheetId="1" r:id="rId1"/></sheets>
+</workbook>`;
+
+    const workbookRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/>
+</Relationships>`;
+
+    const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+<Default Extension="xml" ContentType="application/xml"/>
+<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+<Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/>
+</Types>`;
+
+    const topRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+</Relationships>`;
+
+    const zip = new JSZip();
+    zip.file("[Content_Types].xml", contentTypes);
+    zip.file("_rels/.rels", topRels);
+    zip.file("xl/workbook.xml", workbookXml);
+    zip.file("xl/_rels/workbook.xml.rels", workbookRels);
+    zip.file("xl/worksheets/sheet1.xml", sheetXml);
+    zip.file("xl/sharedStrings.xml", sharedStringsXml);
+
+    const buf = await zip.generateAsync({ type: "arraybuffer", compression: "DEFLATE" });
     const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
