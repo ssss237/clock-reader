@@ -225,10 +225,15 @@ export default function App() {
   const CRLF = "\r\n", TAB = "\t";
   const csvText = "画像撮影時刻(EXIF)" + TAB + "時計誤差(秒)" + CRLF + photoTime + TAB + (diffSec == null ? "" : diffSec) + CRLF;
 
+  const parseRecordTime = s => {
+    const m = s.match(/(\d+)\/(\d+)\/(\d+) (\d+):(\d+):(\d+)/);
+    return m ? new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+m[6]).getTime() : 0;
+  };
+
   const addRecord = () => {
     if (diffSec === null && !photoTime) return;
     const newRec = { photoTime: photoTime || "不明", diffSec: diffSec ?? "" };
-    setRecords(prev => [...prev, newRec]);
+    setRecords(prev => [...prev, newRec].sort((a, b) => parseRecordTime(a.photoTime) - parseRecordTime(b.photoTime)));
   };
 
   const removeRecord = (i) => setRecords(prev => prev.filter((_, idx) => idx !== i));
