@@ -244,9 +244,9 @@ export default function App() {
             </label>
           </div>
           {preview && (
-            <div style={{ padding:"0 12px 12px" }}>
-              <img src={preview} alt="preview" style={{ width:"100%", borderRadius:"6px", border:"1px solid #1a1a28" }} />
-              {photoDate && <div style={{ marginTop:"8px", fontSize:"10px", color:"#888", letterSpacing:"2px", textAlign:"center" }}>📅 {photoTime}</div>}
+            <div>
+              <img src={preview} alt="preview" style={{ width:"100%", display:"block" }} />
+              {photoDate && <div style={{ padding:"8px 12px", fontSize:"10px", color:"#888", letterSpacing:"2px", textAlign:"center" }}>📅 {photoTime}</div>}
             </div>
           )}
         </div>
@@ -301,7 +301,7 @@ export default function App() {
             {showCsv && (
               <div style={{ borderTop:"1px solid #c8a96e20", padding:"10px 12px", background:"#07070e" }}>
                 <div style={{ fontSize:"9px", color:"#555", letterSpacing:"2px", marginBottom:"6px" }}>コピーして .csv に保存、またはExcelに直接貼り付け</div>
-                <textarea readOnly value={csvText} onFocus={e => e.target.select()} onClick={e => e.target.select()}
+                <textarea readOnly value={csvText}
                   style={{ width:"100%", height:"68px", background:"#0a0a14", border:"1px solid #8ab4f860", borderRadius:"4px", color:"#8ab4f8", fontFamily:"'Courier New',monospace", fontSize:"11px", padding:"8px", resize:"none", outline:"none", boxSizing:"border-box" }} />
                 <div style={{ marginTop:"6px", padding:"7px 10px", background:"rgba(138,180,248,0.05)", border:"1px solid #8ab4f820", borderRadius:"4px", fontSize:"10px", color:"#555", lineHeight:1.8 }}>
                   ① テキストをタップ → 全選択される<br />
