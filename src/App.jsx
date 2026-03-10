@@ -134,7 +134,7 @@ function cropToClockFace(dataUrl, callback) {
       }
 
       // 分散が高い（エッジが多い）領域を見つける
-      const THRESH = 0.3;
+      const THRESH = 0.25;
       const rowMax = Math.max(...rowVar);
       const colMax = Math.max(...colVar);
       let top = 0, bottom = SCAN-1, left = 0, right = SCAN-1;
@@ -154,7 +154,7 @@ function cropToClockFace(dataUrl, callback) {
       // 正方形に調整してパディング追加
       const cx = (left + right) / 2;
       const cy = (top + bottom) / 2;
-      const radius = Math.max(right - left, bottom - top) / 2 * 1.1;
+      const radius = Math.max(right - left, bottom - top) / 2 * 0.85;
       const sLeft   = Math.max(0, cx - radius);
       const sTop    = Math.max(0, cy - radius);
       const sSize   = Math.min(SCAN - sLeft, SCAN - sTop, radius * 2);
