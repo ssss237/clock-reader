@@ -100,7 +100,7 @@ function cropToClockFace(dataUrl, callback) {
   img.onload = () => {
     try {
       const W = img.naturalWidth, H = img.naturalHeight;
-      const SCAN = 300, OUT = 420;
+      const SCAN = 300, OUT = 1200;
 
       // スキャン用キャンバス（縮小して処理）
       const sc = document.createElement("canvas");
