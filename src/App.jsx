@@ -188,6 +188,7 @@ export default function App() {
   const [hasResult, setHasResult] = useState(false);
   const [showCsv,   setShowCsv]   = useState(false);
   const [records, setRecords] = useState([]);
+  const [dupMsg, setDupMsg] = useState(false);
 
   useEffect(() => {
     const s = document.createElement("style");
@@ -233,7 +234,16 @@ export default function App() {
   const addRecord = () => {
     if (diffSec === null && !photoTime) return;
     const newRec = { photoTime: photoTime || "不明", diffSec: diffSec ?? "" };
-    setRecords(prev => [...prev, newRec].sort((a, b) => parseRecordTime(a.photoTime) - parseRecordTime(b.photoTime)));
+    setRecords(prev => {
+      const isDup = prev.some(r => r.photoTime === newRec.photoTime && r.diffSec === newRec.diffSec);
+      if (isDup) {
+        setDupMsg(true);
+        setTimeout(() => setDupMsg(false), 3000);
+        return prev;
+      }
+      setDupMsg(false);
+      return [...prev, newRec].sort((a, b) => parseRecordTime(a.photoTime) - parseRecordTime(b.photoTime));
+    });
   };
 
   const removeRecord = (i) => setRecords(prev => prev.filter((_, idx) => idx !== i));
@@ -405,6 +415,13 @@ ${strs.map(s => `<si><t>${esc(s)}</t></si>`).join("")}
               display:"flex", alignItems:"center", justifyContent:"center", gap:"8px" }}>
             <span style={{ fontSize:"16px" }}>➕</span> 記録に追加
           </button>
+          {dupMsg && (
+            <div style={{ padding:"8px 12px", borderRadius:"6px", background:"rgba(229,85,85,0.12)",
+              border:"1px solid #e0555540", color:"#e05555", fontSize:"10px",
+              fontFamily:"'Courier New',monospace", letterSpacing:"2px", textAlign:"center" }}>
+              ⚠ 同一データが既に記録されています
+            </div>
+          )}
         )}
 
         {/* 記録一覧 & Excelエクスポート */}
