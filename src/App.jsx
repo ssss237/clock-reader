@@ -440,10 +440,10 @@ ${strs.map(s => `<si><t>${esc(s)}</t></si>`).join("")}
             </div>
             <div style={{ background:"#07070e" }}>
               {/* ヘッダー */}
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 2fr 1fr 1fr auto",
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 2fr 1fr 1fr 1fr auto",
                 padding:"6px 12px", borderBottom:"1px solid #0e0e1a",
                 fontSize:"9px", letterSpacing:"2px", color:"#333" }}>
-                <span>No.</span><span>撮影時刻(EXIF)</span><span>誤差(秒)</span><span>歩度(s/day)</span><span></span>
+                <span>No.</span><span>撮影時刻(EXIF)</span><span>誤差(秒)</span><span>経過(h)</span><span>歩度(s/day)</span><span></span>
               </div>
               {records.map((r, i) => {
                 const hodoDiff = i >= 1 && records[i-1].diffSec !== "" && r.diffSec !== ""
@@ -457,8 +457,9 @@ ${strs.map(s => `<si><t>${esc(s)}</t></si>`).join("")}
                   : null;
                 const hodo = hodoDiff !== null && hodoTime !== null && hodoTime !== 0
                   ? (hodoDiff / hodoTime * 86400).toFixed(1) : null;
+                const elapsed = hodoTime !== null ? (hodoTime / 3600).toFixed(2) : null;
                 return (
-                  <div key={i} style={{ display:"grid", gridTemplateColumns:"1fr 2fr 1fr 1fr auto",
+                  <div key={i} style={{ display:"grid", gridTemplateColumns:"1fr 2fr 1fr 1fr 1fr auto",
                     padding:"7px 12px", borderBottom:"1px solid #0a0a14",
                     fontSize:"10px", fontFamily:"'Courier New',monospace",
                     alignItems:"center" }}>
@@ -466,6 +467,9 @@ ${strs.map(s => `<si><t>${esc(s)}</t></si>`).join("")}
                     <span style={{ color:"#8ab4f8" }}>{r.photoTime}</span>
                     <span style={{ color: r.diffSec === "" ? "#444" : Math.abs(r.diffSec) <= 5 ? "#00e5a0" : Math.abs(r.diffSec) <= 60 ? "#f5a623" : "#e05555" }}>
                       {r.diffSec === "" ? "--" : (r.diffSec >= 0 ? "+" : "") + r.diffSec + "s"}
+                    </span>
+                    <span style={{ color: elapsed === null ? "#333" : "#8ab4f8" }}>
+                      {elapsed === null ? "--" : elapsed + "h"}
                     </span>
                     <span style={{ color: hodo === null ? "#333" : "#c8a96e" }}>
                       {hodo === null ? "--" : (parseFloat(hodo) >= 0 ? "+" : "") + hodo}
