@@ -408,20 +408,22 @@ ${strs.map(s => `<si><t>${esc(s)}</t></si>`).join("")}
 
         {/* 記録に追加ボタン */}
         {hasResult && (
-          <button onClick={addRecord}
-            style={{ width:"100%", padding:"13px", border:"1px solid #00e5a040", borderRadius:"6px",
-              background:"rgba(0,229,160,0.07)", color:"#00e5a0", fontSize:"11px",
-              fontFamily:"'Courier New',monospace", letterSpacing:"3px", cursor:"pointer",
-              display:"flex", alignItems:"center", justifyContent:"center", gap:"8px" }}>
-            <span style={{ fontSize:"16px" }}>➕</span> 記録に追加
-          </button>
-          {dupMsg && (
-            <div style={{ padding:"8px 12px", borderRadius:"6px", background:"rgba(229,85,85,0.12)",
-              border:"1px solid #e0555540", color:"#e05555", fontSize:"10px",
-              fontFamily:"'Courier New',monospace", letterSpacing:"2px", textAlign:"center" }}>
-              ⚠ 同一データが既に記録されています
-            </div>
-          )}
+          <>
+            <button onClick={addRecord}
+              style={{ width:"100%", padding:"13px", border:"1px solid #00e5a040", borderRadius:"6px",
+                background:"rgba(0,229,160,0.07)", color:"#00e5a0", fontSize:"11px",
+                fontFamily:"'Courier New',monospace", letterSpacing:"3px", cursor:"pointer",
+                display:"flex", alignItems:"center", justifyContent:"center", gap:"8px" }}>
+              <span style={{ fontSize:"16px" }}>➕</span> 記録に追加
+            </button>
+            {dupMsg && (
+              <div style={{ padding:"8px 12px", borderRadius:"6px", background:"rgba(229,85,85,0.12)",
+                border:"1px solid #e0555540", color:"#e05555", fontSize:"10px",
+                fontFamily:"'Courier New',monospace", letterSpacing:"2px", textAlign:"center" }}>
+                ⚠ 同一データが既に記録されています
+              </div>
+            )}
+          </>
         )}
 
         {/* 記録一覧 & Excelエクスポート */}
