@@ -255,7 +255,7 @@ export default function App() {
     const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 
     // Build shared strings
-    const strs = ["No.", "画像撮影時刻(EXIF)", "時計誤差(秒)", "歩度(s/day)"];
+    const strs = ["No.", "画像撮影時刻(EXIF)", "時計誤差(秒)", "経過(h)", "歩度(s/day)"];
     records.forEach(r => { if (!strs.includes(r.photoTime)) strs.push(r.photoTime); });
     const si = s => strs.indexOf(s);
 
@@ -270,31 +270,40 @@ ${strs.map(s => `<si><t>${esc(s)}</t></si>`).join("")}
       `<c r="A1" t="s"><v>${si("No.")}</v></c>` +
       `<c r="B1" t="s"><v>${si("画像撮影時刻(EXIF)")}</v></c>` +
       `<c r="C1" t="s"><v>${si("時計誤差(秒)")}</v></c>` +
-      `<c r="D1" t="s"><v>${si("歩度(s/day)")}</v></c>` +
+      `<c r="D1" t="s"><v>${si("経過(h)")}</v></c>` +
+      `<c r="E1" t="s"><v>${si("歩度(s/day)")}</v></c>` +
       `</row>`;
 
     records.forEach((r, i) => {
       const row = i + 2;
       const diffVal = r.diffSec === "" ? "" : `<c r="C${row}" t="n"><v>${r.diffSec}</v></c>`;
       const timeIdx = si(r.photoTime);
-      // D列: D2は空白、D3以降は =(C{row}-C{row-1})/(B{row}-B{row-1})*86400
-      // B列はEXIF時刻テキストのため数値比較できないので、代わりにC列の差分/行番号差で近似
-      // ユーザー指定: =(C3-C2)/(B3-B2) → B列はテキストなのでEXIF秒数を別途E列に隠す形は複雑
-      // シンプルに: D2=空白, D3以降 =(C{row}-C{row-1})/(B{row}-B{row-1}) をそのまま数式で入れる
+      // D列: 経過(h)
+      let elapsedCell = "";
+      if (i >= 1) {
+        const parse = s => { const m = s.match(/(\d+)\/(\d+)\/(\d+) (\d+):(\d+):(\d+)/); return m ? new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+m[6]) : null; };
+        const t1 = parse(records[i-1].photoTime), t2 = parse(r.photoTime);
+        if (t1 && t2) {
+          const elapsed = ((t2 - t1) / 1000 / 3600).toFixed(2);
+          elapsedCell = `<c r="D${row}" t="n"><v>${elapsed}</v></c>`;
+        }
+      }
+      // E列: 歩度(s/day) 数式
       const formulaCell = i >= 1
-        ? `<c r="D${row}"><f>=(C${row}-C${row-1})/(B${row}-B${row-1})</f></c>`
+        ? `<c r="E${row}"><f>=(C${row}-C${row-1})/(B${row}-B${row-1})</f></c>`
         : "";
       rowsXml += `<row r="${row}">` +
         `<c r="A${row}" t="n"><v>${i+1}</v></c>` +
         `<c r="B${row}" t="s"><v>${timeIdx}</v></c>` +
         `${diffVal}` +
+        `${elapsedCell}` +
         `${formulaCell}` +
         `</row>`;
     });
 
     const sheetXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-<cols><col min="1" max="1" width="6"/><col min="2" max="2" width="26"/><col min="3" max="3" width="14"/><col min="4" max="4" width="16"/></cols>
+<cols><col min="1" max="1" width="6"/><col min="2" max="2" width="26"/><col min="3" max="3" width="14"/><col min="4" max="4" width="12"/><col min="5" max="5" width="16"/></cols>
 <sheetData>${rowsXml}</sheetData>
 </worksheet>`;
 
