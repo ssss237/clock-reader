@@ -351,8 +351,18 @@ ${strs.map(s => `<si><t>${esc(s)}</t></si>`).join("")}
   return (
     <div style={{ minHeight:"100vh", background:"#05050d", color:"#e8e0d0", fontFamily:"'Courier New',monospace", display:"flex", flexDirection:"column" }}>
       <div style={{ padding:"16px 20px", borderBottom:"1px solid #0e0e1a", background:"#05050d", position:"sticky", top:0, zIndex:10, paddingTop:"env(safe-area-inset-top)" }}>
-        <div style={{ fontSize:"11px", letterSpacing:"6px", color:"#c8a96e" }}>ANALOG CLOCK READER</div>
-        <div style={{ fontSize:"9px", letterSpacing:"3px", color:"#333", marginTop:"3px" }}>手動入力モード</div>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+          <div>
+            <div style={{ fontSize:"11px", letterSpacing:"6px", color:"#c8a96e" }}>ANALOG CLOCK READER</div>
+            <div style={{ fontSize:"9px", letterSpacing:"3px", color:"#333", marginTop:"3px" }}>手動入力モード</div>
+          </div>
+          <a href="/manual.pdf" download="ANALOG_CLOCK_READER_取扱説明書.pdf"
+            style={{ padding:"6px 12px", border:"1px solid #c8a96e40", borderRadius:"4px",
+              background:"rgba(200,169,110,0.06)", color:"#c8a96e", fontSize:"9px",
+              letterSpacing:"2px", textDecoration:"none", whiteSpace:"nowrap" }}>
+            📄 取扱説明書
+          </a>
+        </div>
       </div>
 
       <div style={{ flex:1, display:"flex", flexDirection:"column", gap:"12px", padding:"16px", maxWidth:"480px", width:"100%", margin:"0 auto" }}>
