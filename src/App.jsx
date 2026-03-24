@@ -154,7 +154,7 @@ function cropToClockFace(dataUrl, callback) {
       // 正方形に調整してパディング追加
       const cx = (left + right) / 2;
       const cy = (top + bottom) / 2;
-      const radius = Math.max(right - left, bottom - top) / 2 * 0.85;
+      const radius = Math.max(right - left, bottom - top) / 2 * 1.05;
       const sLeft   = Math.max(0, cx - radius);
       const sTop    = Math.max(0, cy - radius);
       const sSize   = Math.min(SCAN - sLeft, SCAN - sTop, radius * 2);
